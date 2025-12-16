@@ -16,6 +16,6 @@ MonoBehaviour:
   Height: 5
   Dots:
   - Position: {x: 0, y: 0}
-    Color: {r: 1, g: 0, b: 0, a: 0}
-  - Position: {x: 1, y: 0}
-    Color: {r: 1, g: 0, b: 0, a: 0}
+    Color: 0
+  - Position: {x: 2, y: 0}
+    Color: 0

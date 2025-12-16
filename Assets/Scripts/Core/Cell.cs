@@ -1,5 +1,6 @@
 using System;
 using UnityEngine;
+using Pipe.Data;
 
 namespace Pipe.Core
 {
@@ -27,17 +28,21 @@ namespace Pipe.Core
             }
         }
         
-        private Color _color = Color.clear;
-        public Color Color {
-            get => _color;
+        // Logic Color
+        public PuzzleColor ColorId;
+        
+        // Visual Color (Resolved from Theme)
+        private Color _visualColor = Color.clear;
+        public Color VisualColor {
+            get => _visualColor;
             set {
-                if (_color != value) {
-                    _color = value;
+                if (_visualColor != value) {
+                    _visualColor = value;
                     OnChanged?.Invoke();
                 }
             }
         }
-        
+
         private bool _isOccupied = false;
         public bool IsOccupied {
             get => _isOccupied;

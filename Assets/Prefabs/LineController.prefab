@@ -59,7 +59,7 @@ LineRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 10754, guid: 0000000000000000f000000000000000, type: 0}
+  - {fileID: 10302, guid: 0000000000000000f000000000000000, type: 0}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -92,8 +92,8 @@ LineRenderer:
       serializedVersion: 2
       m_Curve:
       - serializedVersion: 3
-        time: 0.19244003
-        value: 0.71212196
+        time: 0
+        value: 0.6585407
         inSlope: 0
         outSlope: 0
         tangentMode: 0
@@ -136,7 +136,7 @@ LineRenderer:
     numCornerVertices: 0
     numCapVertices: 0
     alignment: 0
-    textureMode: 0
+    textureMode: 1
     textureScale: {x: 1, y: 1}
     shadowBias: 0.5
     generateLightingData: 0
@@ -155,3 +155,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c6e48b1516a0747739b63e4b9bb840ce, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Pipe.View.LineController
+  _flowSpeed: 0.21
+  _noiseScale: 1
+  _coreIntensity: 0.15
+  _trailDensity: 0.44
+  _trailSpeed: 0.3
+  _trailScale: 0.8
+  _widthMultiplier: 0.6
+  _shaderOverride: {fileID: 0}

@@ -16,6 +16,6 @@ namespace Pipe.Data
     public class DotDefinition
     {
         public Vector2Int Position;
-        public Color Color;
+        public PuzzleColor Color;
     }
 }

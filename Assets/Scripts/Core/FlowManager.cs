@@ -16,13 +16,13 @@ namespace Pipe.Core
         
         // Input logic
         private bool _isDragging = false;
-        private Color _currentPathColor;
+        private PuzzleColor _currentPathColorId;
         private List<Cell> _currentPath;
         private Cell _startCell;
 
-        // Store paths per color. Key: Color, Value: List of Cells in the path
-        private Dictionary<Color, List<Cell>> _activePaths = new Dictionary<Color, List<Cell>>();
-        private Dictionary<Color, LineController> _lineControllers = new Dictionary<Color, LineController>();
+        // Store paths per color. Key: PuzzleColor, Value: List of Cells in the path
+        private Dictionary<PuzzleColor, List<Cell>> _activePaths = new Dictionary<PuzzleColor, List<Cell>>();
+        private Dictionary<PuzzleColor, LineController> _lineControllers = new Dictionary<PuzzleColor, LineController>();
 
         private Camera _mainCamera;
 
@@ -90,13 +90,13 @@ namespace Pipe.Core
                  // For MVP, only start from Dot or existing path end? 
                  // Let's stick to simple: Start from Dot.
                  // Actually, common Flow behavior allows picking up a pipe end.
-                 if (_activePaths.ContainsKey(cell.Color))
+                 if (_activePaths.ContainsKey(cell.ColorId))
                  {
                      // Check if this cell is the end of the existing path
-                     var path = _activePaths[cell.Color];
+                     var path = _activePaths[cell.ColorId];
                      if (path[path.Count - 1] == cell)
                      {
-                         ContinuePath(cell, cell.Color);
+                         ContinuePath(cell, cell.ColorId);
                      }
                  }
             }
@@ -124,37 +124,39 @@ namespace Pipe.Core
         {
             _isDragging = true;
             _startCell = startCell;
-            _currentPathColor = startCell.Color;
+            _currentPathColorId = startCell.ColorId;
 
             // Update or Create path list
-            if (!_activePaths.ContainsKey(_currentPathColor))
+            if (!_activePaths.ContainsKey(_currentPathColorId))
             {
-                _activePaths[_currentPathColor] = new List<Cell>();
+                _activePaths[_currentPathColorId] = new List<Cell>();
             }
             
             // Manage LineController
-            if (!_lineControllers.ContainsKey(_currentPathColor))
+            if (!_lineControllers.ContainsKey(_currentPathColorId))
             {
                 var line = Instantiate(_linePrefab, _linesContainer);
-                line.Init(_currentPathColor);
-                _lineControllers[_currentPathColor] = line;
+                // Resolve visual color
+                Color visualColor = _gridManager.GetVisualColor(_currentPathColorId);
+                line.Init(visualColor);
+                _lineControllers[_currentPathColorId] = line;
             }
             
             // If starting from a dot, clear previous path for this color usually?
             // In Flow, if you drag from a dot, you overwrite the old path.
-            ClearPath(_currentPathColor);
+            ClearPath(_currentPathColorId);
             
-            _currentPath = _activePaths[_currentPathColor];
+            _currentPath = _activePaths[_currentPathColorId];
             _currentPath.Add(startCell);
             
-            UpdateLineVisuals(_currentPathColor);
+            UpdateLineVisuals(_currentPathColorId);
         }
         
-        private void ContinuePath(Cell currentEnd, Color color)
+        private void ContinuePath(Cell currentEnd, PuzzleColor colorId)
         {
              _isDragging = true;
-             _currentPathColor = color;
-             _currentPath = _activePaths[color];
+             _currentPathColorId = colorId;
+             _currentPath = _activePaths[colorId];
              _startCell = _currentPath[0]; // The dot that started this path
         }
 
@@ -169,7 +171,7 @@ namespace Pipe.Core
             if (cell.Type == CellType.Dot)
             {
                 // Can only connect to the SAME color dot, and it must finish the path
-                if (cell.Color != _currentPathColor) return;
+                if (cell.ColorId != _currentPathColorId) return;
                 
                 // Add and Finish
                 AddToPath(cell);
@@ -180,14 +182,14 @@ namespace Pipe.Core
             if (cell.IsOccupied)
             {
                 // If it's occupied by SAME color, we might be backtracking?
-                if (cell.Color == _currentPathColor)
+                if (cell.ColorId == _currentPathColorId)
                 {
                     // Backtracking logic: truncate path to here
                     int index = _currentPath.IndexOf(cell);
                     if (index != -1 && index < _currentPath.Count - 1)
                     {
                         // Remove everything after this index
-                        TruncatePath(_currentPathColor, index);
+                        TruncatePath(_currentPathColorId, index);
                     }
                     return;
                 }
@@ -205,7 +207,9 @@ namespace Pipe.Core
         private void AddToPath(Cell cell)
         {
             cell.IsOccupied = true;
-            cell.Color = _currentPathColor;
+            cell.ColorId = _currentPathColorId;
+            // Also update visual color to show which pipe is here
+            cell.VisualColor = _gridManager.GetVisualColor(_currentPathColorId);
             
             // Visual update: If it's not a dot, we mark it as pipe roughly?
             // Actually Type should probably update to Pipe if it was Empty
@@ -213,32 +217,33 @@ namespace Pipe.Core
             
             _currentPath.Add(cell);
             
-            UpdateLineVisuals(_currentPathColor);
+            UpdateLineVisuals(_currentPathColorId);
         }
 
-        public void ClearPath(Color color)
+        public void ClearPath(PuzzleColor colorId)
         {
-             if (!_activePaths.ContainsKey(color)) return;
+             if (!_activePaths.ContainsKey(colorId)) return;
              
-             var path = _activePaths[color];
+             var path = _activePaths[colorId];
              foreach (var c in path)
              {
                  if (c.Type == CellType.Pipe)
                  {
                      c.Type = CellType.Empty;
                      c.IsOccupied = false;
-                     c.Color = Color.clear;
+                     // Reset visuals
+                     c.VisualColor = Color.clear;
                  }
                  // Keep Dots as Dots
              }
              path.Clear();
              
-             UpdateLineVisuals(color);
+             UpdateLineVisuals(colorId);
         }
         
-        private void TruncatePath(Color color, int newEndIndex)
+        private void TruncatePath(PuzzleColor colorId, int newEndIndex)
         {
-            var path = _activePaths[color];
+            var path = _activePaths[colorId];
             for (int i = path.Count - 1; i > newEndIndex; i--)
             {
                 var c = path[i];
@@ -246,19 +251,19 @@ namespace Pipe.Core
                  {
                      c.Type = CellType.Empty;
                      c.IsOccupied = false;
-                     c.Color = Color.clear;
+                     c.VisualColor = Color.clear;
                  }
                 path.RemoveAt(i);
             }
             
-            UpdateLineVisuals(color);
+            UpdateLineVisuals(colorId);
         }
 
-        private void UpdateLineVisuals(Color color)
+        private void UpdateLineVisuals(PuzzleColor colorId)
         {
-            if (_lineControllers.ContainsKey(color))
+            if (_lineControllers.ContainsKey(colorId))
             {
-                _lineControllers[color].UpdateLine(_activePaths[color]);
+                _lineControllers[colorId].UpdateLine(_activePaths[colorId]);
             }
         }
 
@@ -271,30 +276,33 @@ namespace Pipe.Core
 
         private Cell GetCellFromScreenPos(Vector2 screenPos)
         {
-            // Raycast or WorldPosition conversion
+            if (_mainCamera == null) _mainCamera = Camera.main;
+            if (_mainCamera == null) _mainCamera = FindObjectOfType<Camera>();
             if (_mainCamera == null) return null;
             
-            Vector3 worldPos = _mainCamera.ScreenToWorldPoint(new Vector3(screenPos.x, screenPos.y, -_mainCamera.transform.position.z));
+            // Create Ray from camera
+            Ray ray = _mainCamera.ScreenPointToRay(screenPos);
             
-            // Convert world pos to grid coordinates.
-            // Assuming Grid starts at 0,0 and cells are size 1x1.
-            // And assuming NO Rotation or Scale on Grid for now.
-            // Also need to consider cells are centered or corner pivot? 
-            // Usually simply rounding works if pivot is center (0.5, 0.5) at (0,0)? 
-            // Wait, in GridManager we instantiated at (x, y). 
-            // So Cell(0,0) is at World(0,0,0). 
-            // Which means the cell area is probably form -0.5 to 0.5? Or 0 to 1?
-            // Default Sprite 100ppu usually means 1 unit size.
-            // Let's assume Pivot is Center. So Cell 0,0 is centered at 0,0.
-            // Range x: -0.5 to 0.5. Range y: -0.5 to 0.5.
+            // Raycast against 3D Colliders (CellViews now have BoxColliders)
+            if (Physics.Raycast(ray, out RaycastHit hit, 100f))
+            {
+                // We hit a cell!
+                CellView view = hit.collider.GetComponent<CellView>();
+                if (view != null) 
+                {
+                    // If we could access the cell directly from view, that would be best.
+                    // But CellView doesn't expose public Cell? It does via field but maybe not public property?
+                    // Let's assume Grid coordinate based on Position is safer if we know grid logic.
+                    // CellView Init sets transform.localPosition to (Cell.X, Cell.Y, 0).
+                    // So we can assume hit.transform.localPosition indicates X,Y.
+                    
+                    int x = Mathf.RoundToInt(hit.transform.localPosition.x);
+                    int y = Mathf.RoundToInt(hit.transform.localPosition.y);
+                    return _gridManager.GetCell(x, y);
+                }
+            }
             
-            int x = Mathf.RoundToInt(worldPos.x); 
-            int y = Mathf.RoundToInt(worldPos.y);
-            
-            // Debug check
-            // Debug.Log($"Screen: {screenPos} World: {worldPos} Grid: {x},{y}");
-            
-            return _gridManager.GetCell(x, y);
+            return null;
         }
         
         private void CheckWinCondition()
@@ -348,9 +356,9 @@ namespace Pipe.Core
         }
         
         // Accessor for View
-        public List<Cell> GetPath(Color color)
+        public List<Cell> GetPath(PuzzleColor colorId)
         {
-             if (_activePaths.ContainsKey(color)) return _activePaths[color];
+             if (_activePaths.ContainsKey(colorId)) return _activePaths[colorId];
              return null;
         }
     }
