@@ -19,3 +19,7 @@ MonoBehaviour:
     Color: 0
   - Position: {x: 2, y: 0}
     Color: 0
+  - Position: {x: 1, y: 0}
+    Color: 1
+  - Position: {x: 1, y: 3}
+    Color: 1

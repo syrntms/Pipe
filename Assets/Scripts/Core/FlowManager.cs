@@ -86,16 +86,22 @@ namespace Pipe.Core
             }
             else if (cell != null && cell.Type == CellType.Pipe)
             {
-                 // Optional: Resume path or clear from this point (Advanced feature)
-                 // For MVP, only start from Dot or existing path end? 
-                 // Let's stick to simple: Start from Dot.
-                 // Actually, common Flow behavior allows picking up a pipe end.
+                 // Check if this pipe belongs to a known path
                  if (_activePaths.ContainsKey(cell.ColorId))
                  {
-                     // Check if this cell is the end of the existing path
                      var path = _activePaths[cell.ColorId];
-                     if (path[path.Count - 1] == cell)
+                     int index = path.IndexOf(cell);
+                     
+                     if (index != -1)
                      {
+                         // Found in path
+                         // If we clicked in the middle (index < count-1), Truncate first.
+                         if (index < path.Count - 1)
+                         {
+                             TruncatePath(cell.ColorId, index);
+                         }
+                         
+                         // Now continue from this cell (which is now the end)
                          ContinuePath(cell, cell.ColorId);
                      }
                  }
