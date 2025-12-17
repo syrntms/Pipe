@@ -179,6 +179,9 @@ namespace Pipe.Core
                 // Can only connect to the SAME color dot, and it must finish the path
                 if (cell.ColorId != _currentPathColorId) return;
                 
+                // Prevent going back to start dot
+                if (cell == _startCell) return;
+                
                 // Add and Finish
                 AddToPath(cell);
                 _isDragging = false; // Auto stop dragging when connected
