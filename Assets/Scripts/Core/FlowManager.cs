@@ -201,8 +201,27 @@ namespace Pipe.Core
                 }
                 
                 // If occupied by DIFFERENT color, block or cut?
-                // Classic Flow: Blocks. Or if you want "Bridge" content, it cuts.
-                // Easy version: Blocks.
+                // Requested behavior: Cut the other line up to this point
+                
+                // 1. Cannot run over a Dot of another color
+                if (cell.Type == CellType.Dot) return;
+                
+                // 2. Cut the other line
+                if (_activePaths.ContainsKey(cell.ColorId))
+                {
+                    var otherPath = _activePaths[cell.ColorId];
+                    int indexInOther = otherPath.IndexOf(cell);
+                    if (indexInOther != -1)
+                    {
+                        // Truncate everything from this cell onwards in the other path
+                        // We want to keep up to indexInOther - 1
+                        TruncatePath(cell.ColorId, indexInOther - 1);
+                    }
+                }
+                
+                // 3. Now the cell is theoretically free (VisualColor/Occupied reset by Truncate), 
+                // so we can take it.
+                AddToPath(cell);
                 return;
             }
 
