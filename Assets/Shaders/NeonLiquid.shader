@@ -10,6 +10,7 @@ Shader "Pipe/NeonLiquid"
         _TrailDensity ("Trail Density", Range(0.0, 1.0)) = 0.7
         _TrailSpeed ("Trail Speed", Float) = 2.0
         _TrailScale ("Trail Scale", Float) = 0.2
+        _IsComplete ("Is Complete", Float) = 0.0 // 0 = Incomplete, 1 = Complete
     }
     SubShader
     {
@@ -54,6 +55,7 @@ Shader "Pipe/NeonLiquid"
                 float _TrailDensity;
                 float _TrailSpeed;
                 float _TrailScale;
+                float _IsComplete;
             CBUFFER_END
 
             Varyings vert (Attributes v)
@@ -123,11 +125,10 @@ Shader "Pipe/NeonLiquid"
                 float3 frostColor = lerp(i.color.rgb, float3(1,1,1), 0.5) * 0.3; // 30% brightness
                 frostColor += grain * 0.05; // Subtle grain
                 
-                // Mask Frost by Shape
-                float3 frostLayer = frostColor * frostShape;
-                
-                // Frost Alpha
-                float frostAlpha = frostShape * 0.4;
+                // --- 3. FROSTED CENTER ---
+                // ... (Calculation code remains)
+                float3 frostLayer = frostColor * frostShape * _IsComplete; // Mask by Complete
+                float frostAlpha = frostShape * 0.4 * _IsComplete;
 
                 // --- 4. LIQUID TRAIL EFFECT (ORGANIC DUAL LAYER) ---
                 float2 trailUV1 = i.uv;
@@ -143,27 +144,27 @@ Shader "Pipe/NeonLiquid"
                 float n2 = tex2D(_NoiseTex, trailUV2).r;
                 
                 // Metaball blending: Combine noises.
-                // When n1 and n2 overlap, intensity boosts.
-                float combinedNoise = n1 * 0.6 + n2 * 0.6; // Max 1.2
+                float combinedNoise = n1 * 0.6 + n2 * 0.6; 
                 
-                // Smooth threshold for gooey liquid edge
-                // Adjust threshold dynamically or stick to user settings
+                // Trail mask: liquidVal
                 float liquidVal = smoothstep(_TrailDensity, _TrailDensity + 0.2, combinedNoise);
                 
-                // Trail Shape restricted to inner tube
-                float trailShape = innerBlur * liquidVal; 
+                // Trail Shape
+                float trailShape = innerBlur * liquidVal * _IsComplete; // Mask by Complete
                 
-                // Trail Color: Super bright
+                // Trail Color
                 float3 trailColor = i.color.rgb * _CoreIntensity * 3.0 * trailShape;
 
                 // --- Combine ---
                 float3 finalColor = neonColor + (specColor * specular) + frostLayer + trailColor;
                 
                 // Alpha
+                // Frost and Trail only add alpha if Complete
+                float trailAlpha = liquidVal * _IsComplete;
+                
                 float glassEdge = pow(dist, 10.0) * 0.3; 
                 
-                // Solid liquid trail
-                float finalAlpha = saturate(innerBlur + (specular * 2.0) + glassEdge + (innerRim * 0.5) + frostAlpha + liquidVal);
+                float finalAlpha = saturate(innerBlur + (specular * 2.0) + glassEdge + (innerRim * 0.5) + frostAlpha + trailAlpha);
                 
                 return half4(finalColor, finalAlpha);
             }

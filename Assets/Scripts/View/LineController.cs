@@ -104,9 +104,12 @@ namespace Pipe.View
                 _liquidMaterial.SetFloat("_TrailScale", _trailScale); // This line was already present above.
         }
 
-        public void UpdateLine(List<Cell> path)
+        public void UpdateLine(List<Cell> path, bool isComplete)
         {
-
+            if (_liquidMaterial != null)
+            {
+                _liquidMaterial.SetFloat("_IsComplete", isComplete ? 1.0f : 0.0f);
+            }
             
             if (path == null || path.Count < 1)
             {

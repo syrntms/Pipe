@@ -263,7 +263,21 @@ namespace Pipe.Core
         {
             if (_lineControllers.ContainsKey(colorId))
             {
-                _lineControllers[colorId].UpdateLine(_activePaths[colorId]);
+                var path = _activePaths[colorId];
+                bool isComplete = false;
+                
+                if (path != null && path.Count >= 2)
+                {
+                    Cell start = path[0];
+                    Cell end = path[path.Count - 1];
+                    // Connected if Start is Dot AND End is Dot (and usually same color, implied by path logic)
+                    if (start.Type == CellType.Dot && end.Type == CellType.Dot)
+                    {
+                        isComplete = true;
+                    }
+                }
+                
+                _lineControllers[colorId].UpdateLine(path, isComplete);
             }
         }
 
